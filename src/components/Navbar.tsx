@@ -7,11 +7,11 @@ import { Link, useLocation } from 'react-router-dom'
 const navItems = [
   { name: '首页', path: '/' },
   { name: '一键发币', path: '/mint' },
-  { name: 'LAUNCHPAD', path: '/launchpad' },
+  { name: 'Mint', path: '/launchpad' },
   { name: 'SWAP', path: '/swap' },
-  { name: 'STAKE', path: '/stake' },
-  { name: 'PREDICT', path: '/predict' },
-  { name: 'ANALYSIS', path: '/ai' },
+  { name: '质押', path: '/stake' },
+  { name: '预测', path: '/predict' },
+  { name: 'AI', path: '/ai' },
   { name: '美股', path: '/stocks' },
 ]
 
@@ -27,10 +27,12 @@ export default function Navbar() {
       <div className="container-custom">
         <div className="flex items-center justify-between h-16 lg:h-[72px]">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-            <span className="text-xl lg:text-2xl font-extrabold tracking-tight text-gold group-hover:text-gold-soft transition-colors">
-              FORSAGE2046
-            </span>
+          <Link to="/" className="flex items-center group">
+            <img
+              src="/logo/forsage2046-logo.jpg"
+              alt="FORSAGE2046"
+              className="h-9 w-[180px] object-contain object-left lg:h-10 lg:w-[220px]"
+            />
           </Link>
 
           {/* Desktop Navigation */}
