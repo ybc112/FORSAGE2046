@@ -12,6 +12,7 @@ const navItems = [
   { name: 'STAKE', path: '/stake' },
   { name: 'PREDICT', path: '/predict' },
   { name: 'ANALYSIS', path: '/ai' },
+  { name: '美股', path: '/stocks' },
 ]
 
 export default function Navbar() {
