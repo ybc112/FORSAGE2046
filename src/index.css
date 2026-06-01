@@ -1,0 +1,238 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #131922;
+  --panel: #1d2633;
+  --panel-line: #343d4f;
+  --gold: #ffb751;
+  --gold-soft: #f7ca76;
+  --text: #ffffff;
+  --text-muted: #aab4c0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 700;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0e131b;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #ffb751, #e09c34);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ffc878, #ffb751);
+}
+
+/* ---------- Layout ---------- */
+.container-custom {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+@media (max-width: 768px) {
+  .container-custom {
+    padding: 0 16px;
+  }
+}
+
+/* ---------- Panels & Cards (TTS .static / coin-modal) ---------- */
+.panel {
+  background: #1d2633;
+  border: 1px solid #343d4f;
+  border-radius: 28px;
+  padding: 28px;
+}
+
+.card {
+  background: #1d2633;
+  border: 1px solid #2c374a;
+  border-radius: 18px;
+  transition: border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+  border-color: rgba(255, 183, 81, 0.45);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 183, 81, 0.12);
+}
+
+/* inner sub-surface, darker (TTS coin-modal / input bg) */
+.surface {
+  background: #131922;
+  border-radius: 18px;
+}
+
+/* ---------- Buttons (TTS yellow gradient) ---------- */
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(180deg, #ffcc00 0%, #ffcc66 100%);
+  color: #1a1206;
+  font-weight: 700;
+  padding: 12px 28px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.25s ease, transform 0.15s ease, box-shadow 0.25s ease;
+  letter-spacing: 0.3px;
+}
+.btn-gold:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 8px 24px rgba(255, 183, 81, 0.3);
+}
+.btn-gold:active {
+  transform: translateY(1px);
+}
+.btn-gold:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: #ffb751;
+  border: 1px solid rgba(255, 183, 81, 0.5);
+  padding: 11px 26px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+.btn-outline:hover {
+  background: rgba(255, 183, 81, 0.1);
+  border-color: #ffb751;
+}
+
+/* ---------- Inputs (TTS .uni-input) ---------- */
+.input-dark {
+  width: 100%;
+  background: #131922;
+  border: 1px solid #2c374a;
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.input-dark::placeholder {
+  color: #5d6b7d;
+}
+.input-dark:focus {
+  border-color: #ffb751;
+  box-shadow: 0 0 0 3px rgba(255, 183, 81, 0.12);
+}
+
+/* ---------- Text helpers ---------- */
+.text-gold {
+  color: #ffb751;
+}
+.text-muted {
+  color: #aab4c0;
+}
+
+/* ---------- Amount range slider (TTS u-slider) ---------- */
+.range-gold {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: #0e131b;
+  outline: none;
+  cursor: pointer;
+}
+.range-gold::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffb751;
+  border: 3px solid #1d2633;
+  box-shadow: 0 0 0 1px #ffb751;
+  cursor: pointer;
+}
+.range-gold::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffb751;
+  border: 3px solid #1d2633;
+  cursor: pointer;
+}
+
+/* ---------- Particle background ---------- */
+.particle-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ---------- Animations ---------- */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 183, 81, 0.25); }
+  50% { box-shadow: 0 0 36px rgba(255, 183, 81, 0.5); }
+}
+.pulse-glow {
+  animation: pulse-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.hover-lift {
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 183, 81, 0.12);
+}
+
+/* ---------- Input focus (global fallback) ---------- */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+}
