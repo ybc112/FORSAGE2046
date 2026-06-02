@@ -1,7 +1,7 @@
 // Cloudflare Pages Function — handles POST /api/chat
 // (Vercel-style api/chat.js does NOT run on Cloudflare Pages; this does.)
 const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions'
-const FALLBACK_DEEPSEEK_API_KEY = 'd152d5d87ebb407cb5602f569c7bb28e'
+const FALLBACK_DEEPSEEK_API_KEY = 'sk-0f4d2791a63e4f07bd9d410340fe65df'
 
 const SYSTEM_PROMPT = `
 你是 Forsage AI，面向 FORSAGE2046 的链上投资助手。
