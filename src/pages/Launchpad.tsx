@@ -3,10 +3,12 @@ import { motion } from 'framer-motion'
 import { ethers } from 'ethers'
 import { Rocket, Copy, Check, ExternalLink, AlertCircle } from 'lucide-react'
 import { useStore } from '../stores/useStore'
-import { MINT_CONTRACT_ADDRESS, MINT_ABI, BNB_RPC } from '../utils/contracts'
+import { MINT_CONTRACT_ADDRESS, MINT_ABI, BNB_RPC, TOKENS } from '../utils/contracts'
 
 const TOTAL_SUPPLY_LABEL = '2046 万'
 const DEFAULT_PRICE = '0.02'
+// 展示给用户的代币合约地址（铸造交易仍发往销售合约 MINT_CONTRACT_ADDRESS）
+const TOKEN_ADDRESS = TOKENS.FORSAGE.address
 
 // 把链上/钱包报错转成友好中文提示
 function mintError(e: unknown): string {
@@ -80,12 +82,12 @@ export default function Launchpad() {
   }
 
   const copyAddr = () => {
-    navigator.clipboard.writeText(MINT_CONTRACT_ADDRESS)
+    navigator.clipboard.writeText(TOKEN_ADDRESS)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const shortAddr = `${MINT_CONTRACT_ADDRESS.slice(0, 6)}...${MINT_CONTRACT_ADDRESS.slice(-4)}`
+  const shortAddr = `${TOKEN_ADDRESS.slice(0, 6)}...${TOKEN_ADDRESS.slice(-4)}`
 
   const btnLabel = () => {
     if (status === 'pending') return '铸造中...'
@@ -150,7 +152,7 @@ export default function Launchpad() {
                 {copied ? <Check size={14} /> : <Copy size={14} />}
               </button>
               <a
-                href={`https://bscscan.com/address/${MINT_CONTRACT_ADDRESS}`}
+                href={`https://bscscan.com/address/${TOKEN_ADDRESS}`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-gold hover:bg-gold/10 p-1 rounded transition-colors"

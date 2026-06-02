@@ -5,7 +5,7 @@ const partners = [
 ]
 
 const socialLinks = [
-  { icon: MessageCircle, label: 'Telegram', href: '#' },
+  { icon: MessageCircle, label: 'QQ', href: 'https://wpa.qq.com/msgrd?v=3&uin=473036978&site=qq&menu=yes' },
   { icon: Globe, label: 'Website', href: '#' },
 ]
 
@@ -36,6 +36,8 @@ export default function Footer() {
             <a
               key={link.label}
               href={link.href}
+              target={link.href.startsWith('http') ? '_blank' : undefined}
+              rel={link.href.startsWith('http') ? 'noreferrer' : undefined}
               className="p-3 card text-gray-400 hover:text-gold transition-all hover:scale-110"
               aria-label={link.label}
             >
