@@ -121,7 +121,7 @@ export default function Home() {
               去中心化 · 无控盘 · 高收益 · 稳增长
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link to="/mint" className="btn-gold inline-flex items-center justify-center space-x-2 pulse-glow">
+              <Link to="/launchpad" className="btn-gold inline-flex items-center justify-center space-x-2 pulse-glow">
                 <span>立即开始</span>
                 <ChevronRight size={18} />
               </Link>
