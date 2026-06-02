@@ -1,4 +1,5 @@
 const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions'
+const FALLBACK_DEEPSEEK_API_KEY = 'd152d5d87ebb407cb5602f569c7bb28e'
 
 const SYSTEM_PROMPT = `
 你是 Forsage AI，面向 FORSAGE2046 的链上投资助手。
@@ -28,7 +29,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const apiKey = process.env.DEEPSEEK_API_KEY
+  const apiKey = process.env.DEEPSEEK_API_KEY || FALLBACK_DEEPSEEK_API_KEY
   if (!apiKey) {
     return res.status(500).json({ error: 'DEEPSEEK_API_KEY is not configured' })
   }
