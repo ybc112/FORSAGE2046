@@ -10,7 +10,7 @@ const navItems = [
   { name: 'Mint', path: '/launchpad' },
   { name: 'SWAP', path: '/swap' },
   { name: '质押', path: '/stake' },
-  { name: '预测', path: '/predict' },
+  { name: 'Deep Lucky 预言机', path: '/predict' },
   { name: 'AI', path: '/ai' },
   { name: '美股', path: '/stocks' },
 ]
