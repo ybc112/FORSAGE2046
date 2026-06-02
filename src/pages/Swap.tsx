@@ -20,7 +20,7 @@ const tokenList: TokenOption[] = Object.values(TOKENS).filter((t) => t.symbol !=
 const SLIPPAGE_PRESETS = [0.1, 0.5, 1]
 
 export default function Swap() {
-  const { account, loading, error, connectWallet, getTokenBalance, getAmountOut, checkAllowance, approveToken, executeSwap } =
+  const { account, loading, error, connectWallet, getTokenBalance, getAmountOut, checkAllowance, approveToken, executeSwap, getTokenInfo } =
     useSwap()
   const isConnected = useStore((s) => s.isConnected)
 
@@ -36,6 +36,12 @@ export default function Swap() {
   const [showSettings, setShowSettings] = useState(false)
   const [picker, setPicker] = useState<null | 'from' | 'to'>(null)
   const [search, setSearch] = useState('')
+  // 用户通过合约地址导入的代币（会话内保留）
+  const [customTokens, setCustomTokens] = useState<TokenOption[]>([])
+  const [customToken, setCustomToken] = useState<TokenOption | null>(null)
+  const [importing, setImporting] = useState(false)
+
+  const allTokens = [...tokenList, ...customTokens]
 
   // 拉取余额（未连接时 getTokenBalance 返回 '0'，无需同步 setState）
   useEffect(() => {
@@ -48,7 +54,7 @@ export default function Swap() {
     let active = true
     const calc = async () => {
       if (fromAmount && parseFloat(fromAmount) > 0) {
-        const out = await getAmountOut(fromAmount, fromToken.address, toToken.address)
+        const out = await getAmountOut(fromAmount, fromToken.address, toToken.address, fromToken.decimals, toToken.decimals)
         if (active) setToAmount(out)
       } else {
         setToAmount('')
@@ -79,6 +85,30 @@ export default function Swap() {
     check()
   }, [account, fromAmount, fromToken, checkAllowance])
 
+  // 在选币弹层里粘贴合约地址 → 读取链上信息，作为可导入代币
+  useEffect(() => {
+    const q = search.trim()
+    const isAddress = /^0x[a-fA-F0-9]{40}$/.test(q)
+    const known =
+      tokenList.some((t) => t.address.toLowerCase() === q.toLowerCase()) ||
+      customTokens.some((t) => t.address.toLowerCase() === q.toLowerCase())
+    if (!isAddress || known) {
+      setCustomToken(null)
+      setImporting(false)
+      return
+    }
+    let active = true
+    setImporting(true)
+    getTokenInfo(q).then((info) => {
+      if (!active) return
+      setCustomToken(info)
+      setImporting(false)
+    })
+    return () => {
+      active = false
+    }
+  }, [search, getTokenInfo, customTokens])
+
   const handleSwap = async () => {
     if (!account) {
       connectWallet()
@@ -98,7 +128,7 @@ export default function Swap() {
     }
 
     setTxStatus('pending')
-    const success = await executeSwap(fromAmount, toAmount, fromToken.address, toToken.address, slippage)
+    const success = await executeSwap(fromAmount, toAmount, fromToken.address, toToken.address, slippage, fromToken.decimals, toToken.decimals)
     if (success) {
       setTxStatus('success')
       setFromAmount('')
@@ -119,6 +149,11 @@ export default function Swap() {
   }
 
   const selectToken = (token: TokenOption) => {
+    const inList =
+      tokenList.some((t) => t.address.toLowerCase() === token.address.toLowerCase()) ||
+      customTokens.some((t) => t.address.toLowerCase() === token.address.toLowerCase())
+    if (!inList) setCustomTokens((prev) => [...prev, token])
+
     if (picker === 'from') {
       if (token.address === toToken.address) switchTokens()
       else setFromToken(token)
@@ -128,6 +163,7 @@ export default function Swap() {
     }
     setPicker(null)
     setSearch('')
+    setCustomToken(null)
   }
 
   const setPercent = (pct: number) => {
@@ -168,10 +204,11 @@ export default function Swap() {
     txStatus === 'approving' ||
     (!!account && (!fromAmount || parseFloat(fromAmount) <= 0 || parseFloat(fromAmount) > parseFloat(fromBalance)))
 
-  const filteredTokens = tokenList.filter(
+  const filteredTokens = allTokens.filter(
     (t) =>
       t.symbol.toLowerCase().includes(search.toLowerCase()) ||
-      t.name.toLowerCase().includes(search.toLowerCase()),
+      t.name.toLowerCase().includes(search.toLowerCase()) ||
+      t.address.toLowerCase() === search.trim().toLowerCase(),
   )
 
   return (
@@ -389,8 +426,29 @@ export default function Swap() {
                   </button>
                 )
               })}
-              {filteredTokens.length === 0 && (
-                <p className="text-center text-muted text-sm py-8">未找到代币</p>
+              {filteredTokens.length === 0 && importing && (
+                <p className="text-center text-muted text-sm py-8">查询链上代币信息…</p>
+              )}
+              {filteredTokens.length === 0 && !importing && customToken && (
+                <>
+                  <button
+                    onClick={() => selectToken(customToken)}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-panel-light transition-colors text-left"
+                  >
+                    <TokenIcon symbol={customToken.symbol} address={customToken.address} size={36} />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-white">{customToken.symbol}</p>
+                      <p className="text-xs text-muted truncate">{customToken.name}</p>
+                    </div>
+                    <span className="text-xs text-gold border border-gold/40 rounded-md px-2 py-1 shrink-0">导入</span>
+                  </button>
+                  <p className="text-[11px] text-muted px-3 pt-2 leading-relaxed">
+                    导入的代币请自行核实合约地址、注意诈骗风险；需在 PancakeSwap 有流动性池才能交易。
+                  </p>
+                </>
+              )}
+              {filteredTokens.length === 0 && !importing && !customToken && (
+                <p className="text-center text-muted text-sm py-8">未找到代币，可粘贴合约地址（0x…）导入</p>
               )}
             </div>
           </div>

@@ -8,6 +8,7 @@ import {
   formatAmount,
   parseAmount,
   PANCAKE_ROUTER_ADDRESS,
+  BNB_RPC,
 } from '../utils/contracts'
 import { useStore } from '../stores/useStore'
 
@@ -59,14 +60,20 @@ export function useSwap() {
 
   // 获取兑换金额（链上报价）
   const getAmountOut = useCallback(
-    async (amountIn: string, fromToken: string, toToken: string): Promise<string> => {
+    async (
+      amountIn: string,
+      fromToken: string,
+      toToken: string,
+      fromDecimals?: number,
+      toDecimals?: number,
+    ): Promise<string> => {
       if (!provider || !amountIn || parseFloat(amountIn) <= 0) return '0'
       try {
         const router = getRouterContract(provider)
         const path = getSwapPath(fromToken, toToken)
-        const amountInWei = formatAmount(amountIn, tokenDecimals(fromToken))
+        const amountInWei = formatAmount(amountIn, fromDecimals ?? tokenDecimals(fromToken))
         const amounts = await router.getAmountsOut(amountInWei, path)
-        return parseAmount(amounts[amounts.length - 1], tokenDecimals(toToken))
+        return parseAmount(amounts[amounts.length - 1], toDecimals ?? tokenDecimals(toToken))
       } catch (err) {
         console.error('获取兑换金额失败:', err)
         return '0'
@@ -122,6 +129,8 @@ export function useSwap() {
       fromToken: string,
       toToken: string,
       slippage: number = 0.5,
+      fromDecimals?: number,
+      toDecimals?: number,
     ): Promise<boolean> => {
       if (!signer || !account) {
         setError('请先连接钱包')
@@ -135,10 +144,10 @@ export function useSwap() {
         const path = getSwapPath(fromToken, toToken)
         const deadline = Math.floor(Date.now() / 1000) + 60 * 20 // 20 分钟
 
-        const amountInWei = formatAmount(amountIn, tokenDecimals(fromToken))
+        const amountInWei = formatAmount(amountIn, fromDecimals ?? tokenDecimals(fromToken))
 
         // 按滑点计算最小到账：expectedOut * (1 - slippage%)
-        const expectedOutWei = formatAmount(expectedOut, tokenDecimals(toToken))
+        const expectedOutWei = formatAmount(expectedOut, toDecimals ?? tokenDecimals(toToken))
         const slippageBps = BigInt(Math.round((100 - slippage) * 100)) // 0.5% -> 9950
         const amountOutMinWei = (expectedOutWei * slippageBps) / 10000n
 
@@ -165,6 +174,31 @@ export function useSwap() {
     [signer, account],
   )
 
+  // 按合约地址读取代币信息（未连接钱包时用公共 RPC 兜底）
+  const getTokenInfo = useCallback(
+    async (address: string) => {
+      try {
+        const read: ethers.Provider = provider ?? new ethers.JsonRpcProvider(BNB_RPC)
+        const contract = getTokenContract(address, read)
+        const [symbol, name, decimals] = await Promise.all([
+          contract.symbol(),
+          contract.name(),
+          contract.decimals(),
+        ])
+        return {
+          symbol: String(symbol),
+          name: String(name),
+          address,
+          decimals: Number(decimals),
+          logo: '🪙',
+        }
+      } catch {
+        return null
+      }
+    },
+    [provider],
+  )
+
   return {
     account,
     loading,
@@ -175,5 +209,6 @@ export function useSwap() {
     checkAllowance,
     approveToken,
     executeSwap,
+    getTokenInfo,
   }
 }
