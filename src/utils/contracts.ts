@@ -11,6 +11,13 @@ export const PANCAKE_FACTORY_ADDRESS = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c
 // WBNB 地址
 export const WBNB_ADDRESS = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'
 
+// FORSAGE 2046 MINT 合约：向合约发送 price()（实测 0.02 BNB）即铸造一份，金额不符会 revert
+export const MINT_CONTRACT_ADDRESS = '0x9E67B42aa0ACdDBd1C86DdbF7ff3B9a332951534'
+export const MINT_ABI = [
+  'function price() view returns (uint256)',
+  'function minted() view returns (uint256)',
+]
+
 // 常用代币列表
 export const TOKENS = {
   BNB: {

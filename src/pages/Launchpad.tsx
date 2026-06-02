@@ -1,242 +1,175 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Rocket, Clock, Users, Target, ChevronRight } from 'lucide-react'
+import { ethers } from 'ethers'
+import { Rocket, Copy, Check, ExternalLink, AlertCircle } from 'lucide-react'
+import { useStore } from '../stores/useStore'
+import { MINT_CONTRACT_ADDRESS, MINT_ABI, BNB_RPC } from '../utils/contracts'
 
-interface LaunchProject {
-  id: number
-  name: string
-  symbol: string
-  status: 'upcoming' | 'live' | 'ended'
-  startTime: string
-  endTime: string
-  totalRaise: string
-  participants: number
-  progress: number
-  price: string
-  description: string
-}
-
-const projects: LaunchProject[] = [
-  {
-    id: 1,
-    name: 'Forsage Token',
-    symbol: 'FST',
-    status: 'live',
-    startTime: '2026-06-01 00:00',
-    endTime: '2026-06-07 23:59',
-    totalRaise: '500 BNB',
-    participants: 128,
-    progress: 65,
-    price: '1 BNB = 10000 FST',
-    description: 'Forsage2046 生态治理代币，持有可享受平台收益分红',
-  },
-  {
-    id: 2,
-    name: 'Metaverse Coin',
-    symbol: 'MVC',
-    status: 'upcoming',
-    startTime: '2026-06-10 00:00',
-    endTime: '2026-06-17 23:59',
-    totalRaise: '300 BNB',
-    participants: 0,
-    progress: 0,
-    price: '1 BNB = 5000 MVC',
-    description: '元宇宙生态通用代币，支持跨链流通',
-  },
-  {
-    id: 3,
-    name: 'GameFi Token',
-    symbol: 'GFT',
-    status: 'ended',
-    startTime: '2026-05-20 00:00',
-    endTime: '2026-05-27 23:59',
-    totalRaise: '800 BNB',
-    participants: 256,
-    progress: 100,
-    price: '1 BNB = 20000 GFT',
-    description: 'GameFi 游戏平台代币，用于游戏内交易和奖励',
-  },
-]
-
-const statusConfig = {
-  upcoming: { label: '即将开始', color: 'text-blue-400', bg: 'bg-blue-400/10' },
-  live: { label: '进行中', color: 'text-green-400', bg: 'bg-green-400/10' },
-  ended: { label: '已结束', color: 'text-gray-400', bg: 'bg-gray-400/10' },
-}
+const TOTAL_SUPPLY_LABEL = '2046 万'
+const DEFAULT_PRICE = '0.02'
 
 export default function Launchpad() {
-  const [filter, setFilter] = useState<'all' | 'upcoming' | 'live' | 'ended'>('all')
-  const [selectedProject, setSelectedProject] = useState<LaunchProject | null>(null)
+  const account = useStore((s) => s.account)
+  const signer = useStore((s) => s.signer)
+  const provider = useStore((s) => s.provider)
+  const connect = useStore((s) => s.connect)
+  const ensureBscChain = useStore((s) => s.ensureBscChain)
 
-  const filteredProjects = filter === 'all' 
-    ? projects 
-    : projects.filter(p => p.status === filter)
+  const [price, setPrice] = useState(DEFAULT_PRICE)
+  const [minted, setMinted] = useState('-')
+  const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle')
+  const [errMsg, setErrMsg] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  const readContract = useCallback(async () => {
+    try {
+      const read = provider ?? new ethers.JsonRpcProvider(BNB_RPC)
+      const c = new ethers.Contract(MINT_CONTRACT_ADDRESS, MINT_ABI, read)
+      const [p, m] = await Promise.all([c.price(), c.minted()])
+      setPrice(ethers.formatEther(p))
+      setMinted(m.toString())
+    } catch {
+      // 读取失败时保留默认展示
+    }
+  }, [provider])
+
+  useEffect(() => {
+    readContract()
+  }, [readContract])
+
+  const handleMint = async () => {
+    setErrMsg('')
+    if (!account || !signer) {
+      await connect()
+      return
+    }
+    const ok = await ensureBscChain()
+    if (!ok) return
+    try {
+      setStatus('pending')
+      const read = provider ?? new ethers.JsonRpcProvider(BNB_RPC)
+      const c = new ethers.Contract(MINT_CONTRACT_ADDRESS, MINT_ABI, read)
+      // 用链上实时价格作为发送金额，避免金额不符被合约 revert
+      const value = await c.price()
+      const tx = await signer.sendTransaction({ to: MINT_CONTRACT_ADDRESS, value })
+      await tx.wait()
+      setStatus('success')
+      readContract()
+      setTimeout(() => setStatus('idle'), 4000)
+    } catch (e) {
+      setErrMsg(e instanceof Error ? e.message : '铸造失败')
+      setStatus('error')
+      setTimeout(() => setStatus('idle'), 4000)
+    }
+  }
+
+  const copyAddr = () => {
+    navigator.clipboard.writeText(MINT_CONTRACT_ADDRESS)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const shortAddr = `${MINT_CONTRACT_ADDRESS.slice(0, 6)}...${MINT_CONTRACT_ADDRESS.slice(-4)}`
+
+  const btnLabel = () => {
+    if (status === 'pending') return '铸造中...'
+    if (status === 'success') return '铸造成功 ✓'
+    if (status === 'error') return '铸造失败，请重试'
+    if (!account) return '连接钱包铸造'
+    return `立即铸造 · ${price} BNB / 份`
+  }
 
   return (
     <div className="min-h-screen pt-24 pb-12">
-      <div className="container-custom">
+      <div className="container-custom max-w-xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10"
+          className="text-center mb-8"
         >
-          <h1 className="text-3xl lg:text-4xl font-display font-bold text-gold mb-4">
-            发射台
-          </h1>
-          <p className="text-gray-400">
-            公平发射，自动流通，发现下一个明星项目
-          </p>
+          <h1 className="text-3xl lg:text-4xl font-display font-bold text-gold mb-3">Mint</h1>
+          <p className="text-gray-400">FORSAGE 2046 公平铸造 · 每份 {price} BNB</p>
         </motion.div>
 
-        {/* Filter Tabs */}
-        <div className="flex justify-center gap-2 mb-8">
-          {(['all', 'upcoming', 'live', 'ended'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-6 py-2 rounded-lg font-display text-sm transition-all ${
-                filter === f
-                  ? 'bg-gold text-black'
-                  : 'bg-panel-light text-gray-400 hover:text-gold'
-              }`}
-            >
-              {f === 'all' ? '全部' : f === 'upcoming' ? '即将开始' : f === 'live' ? '进行中' : '已结束'}
-            </button>
-          ))}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card p-6 lg:p-8 gradient-border"
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-gold to-orange-500 rounded-2xl flex items-center justify-center pulse-glow">
+              <Rocket size={32} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-display font-bold text-white">FORSAGE 2046</h2>
+              <p className="text-gold">链上公平铸造</p>
+            </div>
+          </div>
 
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredProjects.map((project) => (
-            <motion.div
-              key={project.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="card p-6 hover:scale-[1.02] transition-transform cursor-pointer"
-              onClick={() => setSelectedProject(project)}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-gold to-orange-500 rounded-xl flex items-center justify-center">
-                    <Rocket size={24} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-display font-bold text-white">{project.name}</h3>
-                    <p className="text-gold text-sm">{project.symbol}</p>
-                  </div>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-display ${statusConfig[project.status].bg} ${statusConfig[project.status].color}`}>
-                  {statusConfig[project.status].label}
-                </span>
-              </div>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="p-4 bg-panel-light rounded-xl text-center">
+              <p className="text-gray-500 text-xs mb-1">总量</p>
+              <p className="text-white font-display text-lg">{TOTAL_SUPPLY_LABEL}</p>
+            </div>
+            <div className="p-4 bg-panel-light rounded-xl text-center">
+              <p className="text-gray-500 text-xs mb-1">单价</p>
+              <p className="text-white font-display text-lg">{price} BNB / 份</p>
+            </div>
+            <div className="p-4 bg-panel-light rounded-xl text-center">
+              <p className="text-gray-500 text-xs mb-1">已铸造</p>
+              <p className="text-white font-display text-lg">{minted} 份</p>
+            </div>
+            <div className="p-4 bg-panel-light rounded-xl text-center">
+              <p className="text-gray-500 text-xs mb-1">网络</p>
+              <p className="text-white font-display text-lg">BNB Chain</p>
+            </div>
+          </div>
 
-              <p className="text-gray-400 text-sm mb-4">{project.description}</p>
-
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Target size={14} className="text-gold" />
-                  <span>募集: {project.totalRaise}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Users size={14} className="text-gold" />
-                  <span>参与: {project.participants}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Clock size={14} className="text-gold" />
-                  <span>{project.startTime}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <span className="text-gold">价格:</span>
-                  <span>{project.price}</span>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-400">进度</span>
-                  <span className="text-gold font-display">{project.progress}%</span>
-                </div>
-                <div className="h-2 bg-panel-light rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-gold to-orange-500 rounded-full transition-all duration-500"
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
-              </div>
-
-              <button className="w-full py-3 bg-gold/10 border border-gold/30 rounded-lg text-gold font-display text-sm hover:bg-gold/20 transition-all flex items-center justify-center gap-2">
-                查看详情
-                <ChevronRight size={16} />
+          {/* 合约地址 */}
+          <div className="flex items-center justify-between bg-bg rounded-xl px-4 py-3 mb-6">
+            <span className="text-gray-500 text-sm">合约</span>
+            <div className="flex items-center gap-2">
+              <span className="text-gold font-mono text-sm">{shortAddr}</span>
+              <button onClick={copyAddr} className="text-gold hover:bg-gold/10 p-1 rounded transition-colors" title="复制地址">
+                {copied ? <Check size={14} /> : <Copy size={14} />}
               </button>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Project Detail Modal */}
-        {selectedProject && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-            onClick={() => setSelectedProject(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="card p-6 lg:p-8 max-w-lg w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-gradient-to-br from-gold to-orange-500 rounded-xl flex items-center justify-center">
-                  <Rocket size={32} className="text-white" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-display font-bold text-white">{selectedProject.name}</h2>
-                  <p className="text-gold">{selectedProject.symbol}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between py-2 border-b border-gold/10">
-                  <span className="text-gray-400">状态</span>
-                  <span className={`${statusConfig[selectedProject.status].color}`}>
-                    {statusConfig[selectedProject.status].label}
-                  </span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gold/10">
-                  <span className="text-gray-400">开始时间</span>
-                  <span className="text-white">{selectedProject.startTime}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gold/10">
-                  <span className="text-gray-400">结束时间</span>
-                  <span className="text-white">{selectedProject.endTime}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gold/10">
-                  <span className="text-gray-400">募集目标</span>
-                  <span className="text-white">{selectedProject.totalRaise}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gold/10">
-                  <span className="text-gray-400">兑换比例</span>
-                  <span className="text-gold">{selectedProject.price}</span>
-                </div>
-              </div>
-
-              {selectedProject.status === 'live' && (
-                <button className="w-full btn-gold py-4">
-                  立即参与
-                </button>
-              )}
-
-              <button
-                onClick={() => setSelectedProject(null)}
-                className="w-full mt-4 py-3 text-gray-400 hover:text-white transition-colors"
+              <a
+                href={`https://bscscan.com/address/${MINT_CONTRACT_ADDRESS}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-gold hover:bg-gold/10 p-1 rounded transition-colors"
+                title="区块浏览器"
               >
-                关闭
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
+                <ExternalLink size={14} />
+              </a>
+            </div>
+          </div>
+
+          {errMsg && (
+            <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl mb-4">
+              <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
+              <p className="text-red-400 text-sm break-words">{errMsg}</p>
+            </div>
+          )}
+
+          <button
+            onClick={handleMint}
+            disabled={status === 'pending'}
+            className={`w-full py-4 rounded-2xl font-bold text-base transition-all ${
+              status === 'success'
+                ? 'bg-green-500 text-white'
+                : status === 'error'
+                  ? 'bg-red-500 text-white'
+                  : 'btn-gold'
+            } ${status === 'pending' ? 'opacity-60 cursor-wait' : ''}`}
+          >
+            {btnLabel()}
+          </button>
+
+          <p className="text-center text-[11px] text-gray-500 mt-3 leading-relaxed">
+            点击后钱包将向合约支付 {price} BNB 完成一份铸造。请确认在 BNB Chain 上操作并核对合约地址；链上交易不可撤销。
+          </p>
+        </motion.div>
       </div>
     </div>
   )
