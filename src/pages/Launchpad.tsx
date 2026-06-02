@@ -8,6 +8,22 @@ import { MINT_CONTRACT_ADDRESS, MINT_ABI, BNB_RPC } from '../utils/contracts'
 const TOTAL_SUPPLY_LABEL = '2046 万'
 const DEFAULT_PRICE = '0.02'
 
+// 把链上/钱包报错转成友好中文提示
+function mintError(e: unknown): string {
+  const err = e as { code?: string | number; shortMessage?: string; message?: string }
+  const msg = (err?.shortMessage || err?.message || '').toLowerCase()
+  if (err?.code === 'INSUFFICIENT_FUNDS' || msg.includes('insufficient funds')) {
+    return 'BNB 余额不足：每份需 0.02 BNB，外加少量 gas 手续费，请先给钱包充值后重试'
+  }
+  if (err?.code === 'ACTION_REJECTED' || err?.code === 4001 || msg.includes('rejected') || msg.includes('denied')) {
+    return '你已取消这笔交易'
+  }
+  if (msg.includes('value not match')) {
+    return '铸造金额不符，请刷新页面后重试'
+  }
+  return '铸造失败，请稍后重试'
+}
+
 export default function Launchpad() {
   const account = useStore((s) => s.account)
   const signer = useStore((s) => s.signer)
@@ -57,7 +73,7 @@ export default function Launchpad() {
       readContract()
       setTimeout(() => setStatus('idle'), 4000)
     } catch (e) {
-      setErrMsg(e instanceof Error ? e.message : '铸造失败')
+      setErrMsg(mintError(e))
       setStatus('error')
       setTimeout(() => setStatus('idle'), 4000)
     }

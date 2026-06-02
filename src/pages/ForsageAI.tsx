@@ -106,12 +106,12 @@ export default function ForsageAI() {
 
         const data = await response.json().catch(() => null)
         if (!response.ok) {
-          throw new Error(data?.error || 'DeepSeek 请求失败')
+          throw new Error(data?.error || 'AI 请求失败')
         }
 
         full = String(data?.content || '').trim()
         if (!full) {
-          throw new Error('DeepSeek 返回了空内容')
+          throw new Error('AI 返回了空内容')
         }
       } catch (error) {
         full = `AI 服务暂时不可用：${error instanceof Error ? error.message : '未知错误'}`
@@ -193,7 +193,6 @@ export default function ForsageAI() {
           </button>
         </div>
       </div>
-      <p className="text-center text-[11px] text-gray-600 mt-2">内容由 DeepSeek 生成，仅供参考，请自行甄别风险</p>
     </div>
   )
 
