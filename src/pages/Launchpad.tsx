@@ -34,7 +34,6 @@ export default function Launchpad() {
   const ensureBscChain = useStore((s) => s.ensureBscChain)
 
   const [price, setPrice] = useState(DEFAULT_PRICE)
-  const [minted, setMinted] = useState('-')
   const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle')
   const [errMsg, setErrMsg] = useState('')
   const [copied, setCopied] = useState(false)
@@ -43,9 +42,8 @@ export default function Launchpad() {
     try {
       const read = provider ?? new ethers.JsonRpcProvider(BNB_RPC)
       const c = new ethers.Contract(MINT_CONTRACT_ADDRESS, MINT_ABI, read)
-      const [p, m] = await Promise.all([c.price(), c.minted()])
+      const p = await c.price()
       setPrice(ethers.formatEther(p))
-      setMinted(m.toString())
     } catch {
       // 读取失败时保留默认展示
     }
@@ -133,11 +131,7 @@ export default function Launchpad() {
               <p className="text-gray-500 text-xs mb-1">单价</p>
               <p className="text-white font-display text-lg">{price} BNB / 份</p>
             </div>
-            <div className="p-4 bg-panel-light rounded-xl text-center">
-              <p className="text-gray-500 text-xs mb-1">已铸造</p>
-              <p className="text-white font-display text-lg">{minted} 份</p>
-            </div>
-            <div className="p-4 bg-panel-light rounded-xl text-center">
+            <div className="p-4 bg-panel-light rounded-xl text-center col-span-2">
               <p className="text-gray-500 text-xs mb-1">网络</p>
               <p className="text-white font-display text-lg">BNB Chain</p>
             </div>
