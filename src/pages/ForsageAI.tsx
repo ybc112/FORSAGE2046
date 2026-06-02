@@ -58,10 +58,18 @@ export default function ForsageAI() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
   const stopRef = useRef(false)
+  const atBottomRef = useRef(true)
 
-  // 自动滚到底部
+  // 用户是否停留在底部附近，决定是否自动跟随
+  const handleScroll = () => {
+    const el = scrollRef.current
+    if (el) atBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+  }
+
+  // 打字过程中即时贴底（用即时滚动而非 smooth，避免每帧平滑滚动互相打断导致上下抽搐）
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+    const el = scrollRef.current
+    if (el && atBottomRef.current) el.scrollTop = el.scrollHeight
   }, [messages])
 
   // 输入框自适应高度
@@ -78,6 +86,7 @@ export default function ForsageAI() {
       const content = text.trim()
       if (!content || loading) return
 
+      atBottomRef.current = true
       setInput('')
       const nextMessages: Message[] = [...messages, { role: 'user', content }]
       setMessages(nextMessages)
@@ -218,7 +227,7 @@ export default function ForsageAI() {
       ) : (
         /* 对话态：消息列表 + 置底输入框 */
         <>
-          <div ref={scrollRef} className="flex-1 overflow-y-auto">
+          <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
             <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
               {messages.map((m, i) => (
                 <motion.div

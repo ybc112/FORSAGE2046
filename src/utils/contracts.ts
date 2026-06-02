@@ -76,6 +76,13 @@ export const TOKENS = {
     decimals: 18,
     logo: '₿',
   },
+  FORSAGE: {
+    symbol: 'FORSAGE',
+    name: 'Forsage2046',
+    address: '0x9BF1411f45C2D4c3f790102A5dCBa55a4e002046',
+    decimals: 18,
+    logo: '⚡',
+  },
 }
 
 // PancakeSwap Router ABI (简化版)
