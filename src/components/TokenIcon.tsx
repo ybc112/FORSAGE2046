@@ -12,6 +12,7 @@ const LOCAL_LOGOS: Record<string, string> = {
   BNB: '/logo/BNB.png',
   WBNB: '/logo/BNB.png',
   USDT: '/logo/USDT.png',
+  FORSAGE: '/logo/forsage.jpg',
 }
 
 const GRADIENTS = [
