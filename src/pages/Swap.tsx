@@ -24,8 +24,8 @@ export default function Swap() {
     useSwap()
   const isConnected = useStore((s) => s.isConnected)
 
-  const [fromToken, setFromToken] = useState<TokenOption>(tokenList[0])
-  const [toToken, setToToken] = useState<TokenOption>(tokenList[1]) // USDT
+  const [fromToken, setFromToken] = useState<TokenOption>(tokenList.find((t) => t.symbol === 'BNB') ?? tokenList[0]) // BNB
+  const [toToken, setToToken] = useState<TokenOption>(tokenList.find((t) => t.symbol === 'FORSAGE') ?? tokenList[1]) // FORSAGE
   const [fromAmount, setFromAmount] = useState('')
   const [toAmount, setToAmount] = useState('')
   const [fromBalance, setFromBalance] = useState('0')
