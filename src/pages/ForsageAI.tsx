@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react'
 import { motion } from 'framer-motion'
 import { Sparkles, ArrowUp, Lightbulb, Square } from 'lucide-react'
+import ReactMarkdown, { type Components } from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -15,6 +17,37 @@ const SUGGESTIONS = [
 ]
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// Markdown 渲染样式（让 DeepSeek 返回的 **加粗**、列表、表格等正常显示）
+const mdComponents: Components = {
+  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+  ul: ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>,
+  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+  strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+  em: ({ children }) => <em className="italic">{children}</em>,
+  h1: ({ children }) => <h1 className="text-lg font-bold text-white mt-3 mb-2 first:mt-0">{children}</h1>,
+  h2: ({ children }) => <h2 className="text-base font-bold text-white mt-3 mb-2 first:mt-0">{children}</h2>,
+  h3: ({ children }) => <h3 className="text-[15px] font-semibold text-white mt-2 mb-1.5 first:mt-0">{children}</h3>,
+  a: ({ href, children }) => (
+    <a href={href} target="_blank" rel="noreferrer" className="text-gold underline underline-offset-2 break-all">
+      {children}
+    </a>
+  ),
+  code: ({ children }) => <code className="bg-bg/60 px-1 py-0.5 rounded text-[13px] text-gold">{children}</code>,
+  pre: ({ children }) => <pre className="bg-bg/60 p-3 rounded-lg overflow-x-auto text-[13px] mb-2">{children}</pre>,
+  blockquote: ({ children }) => (
+    <blockquote className="border-l-2 border-gold/40 pl-3 text-gray-400 my-2">{children}</blockquote>
+  ),
+  table: ({ children }) => (
+    <div className="overflow-x-auto my-2">
+      <table className="w-full text-sm border-collapse">{children}</table>
+    </div>
+  ),
+  th: ({ children }) => <th className="border border-panel-line px-2 py-1 text-left text-gold">{children}</th>,
+  td: ({ children }) => <td className="border border-panel-line px-2 py-1">{children}</td>,
+  hr: () => <hr className="border-panel-line my-3" />,
+}
 
 export default function ForsageAI() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -200,13 +233,19 @@ export default function ForsageAI() {
                     </div>
                   )}
                   <div
-                    className={`whitespace-pre-wrap leading-relaxed text-[15px] ${
+                    className={`leading-relaxed text-[15px] ${
                       m.role === 'user'
-                        ? 'bg-panel border border-panel-line rounded-2xl rounded-tr-sm px-4 py-2.5 text-white max-w-[80%]'
+                        ? 'whitespace-pre-wrap bg-panel border border-panel-line rounded-2xl rounded-tr-sm px-4 py-2.5 text-white max-w-[80%]'
                         : 'text-gray-200 pt-1 max-w-[88%]'
                     }`}
                   >
-                    {m.content}
+                    {m.role === 'assistant' ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                        {m.content}
+                      </ReactMarkdown>
+                    ) : (
+                      m.content
+                    )}
                     {m.role === 'assistant' && loading && i === messages.length - 1 && (
                       <span className="inline-block w-1.5 h-4 align-middle ml-0.5 bg-gold animate-pulse" />
                     )}
